@@ -70,24 +70,41 @@ echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.
 sudo apt-get update
 sudo apt-get install trivy
 
+
 Verifiy Trivy installation: trivy --version
 
 8. Install Docker Scout
 Make sure to Login to DockerHub account in browser
-<Follow the process as explained in the video>
+docker login -u <DockerHubUserName> press enter then give the password
+curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s -- -b /usr/local/bin
+sudo chmod 777 /var/run/docker.sock
 
 9. Install SonarQube using Docker
 $ docker run -d --name sonar -p 9000:9000 sonarqube:lts-community
 $ docker ps (You can see SonarQube container)
 
-<Follow the process as explained in the video>
+Access SonarQube in browser:
+
+URL: http://<PublicIP>:9000
+Default credentials:
+Username: admin
+Password: admin
+
+Change password after first login
 
 10. Installation of Plugins in Jenkins
 Install below plugins:
-<Follow the process as explained in the video>
+Eclipse Temurin Installer, SonarQube Scanner, NodeJS, OWASP Dependency-Check 5.5.1, Docker 1.6.2, Docker Commons, Docker Pipeline, Docker API, docker-build-step, Pipeline: Stage View, Prometheus metrics, Email Extension Template
 
 11. SonarQube configuration in Jenkins
-<Follow the process as explained in the video>
+Go to SonarQube console
+URL: http://<PublicIP>:9000
+Navigate to: Administration → Security → Users
+Click the token menu (3 bars icon)
+Create new token:
+Name: jenkins
+Expires in: 30 days
+Copy the generated token
 
 11.1. Tools Configuration in Jenkins
 <Follow the process as explained in the video>
@@ -161,8 +178,8 @@ pipeline {
             steps {
                 dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit -n', odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-    }
-}
+            }
+        }
         stage ("Trivy File Scan") {
             steps {
                 sh "trivy fs . > trivy.txt"
@@ -380,12 +397,12 @@ The path of prometheus.yml is; cd /etc/prometheus/ ----> ls -l ----> You can see
 
   - job_name: 'node_exporter'
     static_configs:
-      - targets: ['<MonitoringVMip>:9100']
+      - targets: ['34.44.90.218:9100']
 
   - job_name: 'jenkins'
     metrics_path: '/prometheus'
     static_configs:
-      - targets: ['<your-jenkins-ip>:<your-jenkins-port>']
+      - targets: ['34.61.146.1:8080']
 
  In the above, replace <your-jenkins-ip> and <your-jenkins-port> with the appropriate IPs ----> esc ----> :wq
 
@@ -460,7 +477,44 @@ You will see the Grafana dashboard
 The first thing that we have to do in Grafana is to add the data source
 Lets add the data source;
 
-<Follow the process as explained in the video>
+Adding Data Sources in Grafana
+Add Prometheus Data Source:
+-> Click on "Connections" in the left pane OR click "Data sources" in the main window.
+-> Select "Prometheus".
+-> Enable the "Default" toggle.
+-> Under Connection, paste your Prometheus URL (e.g., http://<PROMETHEUS_IP>:9090).
+-> Remove the trailing / from the URL.
+-> Scroll down and click "Save & Test".
+-> A green checkmark confirms success.
+
+Importing Dashboards
+1. Node Exporter Dashboard
+Get the Template:
+
+Search for "Grafana Node Exporter Dashboard" (Grafana Dashboard ID 1860).
+
+Click "Copy ID to Clipboard" (ID: 1860).
+
+Import into Grafana:
+
+In Grafana, click "+" → "Import".
+
+Paste the Dashboard ID (1860) and click "Load".
+
+Under "Prometheus", select your Prometheus data source.
+
+Click "Import" → "Save" (top-right icon).
+
+2. Jenkins Dashboard
+Get the Template:
+
+Search for "Grafana Jenkins Dashboard" (Grafana Dashboard ID 9964).
+
+Copy the ID (9964).
+
+Import into Grafana:
+
+Repeat the import steps above using ID 9964.
 
 Click on Dashboards in the left pane, you can see both the dashboards you have just added.
 
