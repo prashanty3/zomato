@@ -16,3 +16,17 @@ then run the docker ps command without sudo
 
 
 
+--> clear all builds in jenkins
+cd /var/lib/jenkins/jobs
+ls
+PC@zomato-devops:/var/lib/jenkins/jobs$ ls
+'Zomato Project Prashant'   zomato-pipeling
+cd 'Zomato Project Prashant'
+sudo rm -rf builds/*
+echo 1 | sudo tee nextBuildNumber
+sudo systemctl restart jenkins
+
+
+
+
+
