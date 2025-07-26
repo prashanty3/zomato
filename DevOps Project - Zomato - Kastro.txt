@@ -137,7 +137,7 @@ Pipeline Script
 pipeline {
     agent any
     tools {
-        jdk 'jdk17'
+        jdk 'jdk21'
         nodejs 'node23'
     }
     environment {
@@ -151,13 +151,15 @@ pipeline {
         }
         stage ("Git Checkout") {
             steps {
-                git 'https://github.com/KastroVKiran/Zomato-Project-Kastro.git'
+                git branch: 'main', url: 'https://github.com/prashanty3/zomato.git'
             }
         }
-        stage('OWASP FS SCAN') {
-            steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        stage("Sonarqube Analysis"){
+            steps{
+                withSonarQubeEnv('sonar-server') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=zomato \
+                    -Dsonar.projectKey=zomato '''
+                }
             }
         }
         stage("Code Quality Gate"){
@@ -174,7 +176,7 @@ pipeline {
         }
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit -n', odcInstallation: 'DP-Check'
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
@@ -185,15 +187,33 @@ pipeline {
         }
         stage ("Build Docker Image") {
             steps {
-                sh "docker build -t zomato ."
+                script {
+                    // 1. Stop and remove any running container using the old image
+                    sh '''
+                    if docker ps -a --format "{{.Names}}" | grep -q "zomato"; then
+                        docker stop zomato || true
+                        docker rm zomato || true
+                    fi
+                    '''
+                    
+                    // 2. Remove the old image if it exists
+                    sh '''
+                    if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "sonalisinhawipro/zomato:latest"; then
+                        docker rmi sonalisinhawipro/zomato:latest || true
+                    fi
+                    '''
+                    
+                    // 3. Build the new image
+                    sh "docker build -t sonalisinhawipro/zomato:latest ."
+                }
             }
         }
         stage ("Tag & Push to DockerHub") {
             steps {
                 script {
                     withDockerRegistry(credentialsId: 'docker') {
-                        sh "docker tag zomato kastrov/zomato:latest "
-                        sh "docker push kastrov/zomato:latest "
+                        sh "docker tag zomato sonalisinhawipro/zomato:latest "
+                        sh "docker push sonalisinhawipro/zomato:latest "
                     }
                 }
             }
@@ -202,16 +222,16 @@ pipeline {
             steps {
                 script{
                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
-                       sh 'docker-scout quickview kastrov/zomato:latest'
-                       sh 'docker-scout cves kastrov/zomato:latest'
-                       sh 'docker-scout recommendations kastrov/zomato:latest'
+                       sh 'docker-scout quickview sonalisinhawipro/zomato:latest'
+                       sh 'docker-scout cves sonalisinhawipro/zomato:latest'
+                       sh 'docker-scout recommendations sonalisinhawipro/zomato:latest'
                    }
                 }
             }
         }
         stage ("Deploy to Container") {
             steps {
-                sh 'docker run -d --name zomato -p 3000:3000 kastrov/zomato:latest'
+                sh 'docker run -d --name zomato -p 3000:3000 sonalisinhawipro/zomato:latest'
             }
         }
     }
@@ -234,12 +254,13 @@ pipeline {
                 </body>
                 </html>
             """,
-            to: 'kastrokiran@gmail.com',
+            to: 'sonalisinhawipro@gmail.com',
             mimeType: 'text/html',
             attachmentsPattern: 'trivy.txt'
         }
     }
 }
+
 
 
 
