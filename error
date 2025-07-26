@@ -1,0 +1,18 @@
+--> If SonarQube error getting:
+
+docker ps -a # check whether sonarqube is there or not if yes and it stopped then 
+
+sudo docker start container_id
+
+sudo docker ps -a #you will get that container run up 
+
+--> If Docker permission error getting 
+
+sudo usermod -aG docker $(whoami)
+
+newgrp docker
+
+then run the docker ps command without sudo
+
+
+
