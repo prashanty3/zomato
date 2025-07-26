@@ -40,7 +40,13 @@ pipeline {
         }
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                // First update the vulnerability database (recommended)
+                dependencyCheck additionalArguments: '--updateonly --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                
+                // Then perform the actual scan
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit --format XML --out reports/', odcInstallation: 'DP-Check'
+                
+                // Publish the results
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
