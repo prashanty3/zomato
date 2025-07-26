@@ -6,7 +6,6 @@ Path: jenkins
 
 
 Step by Step:
-
 After created Jira account right hand side you will get quickstart and there you will get the option connect your code. click on it and select the repository you want to connect. After that you will get the option to create a new project or connect to an existing one. Select the existing one and then you will be able to see the issues in your Jira project.
 
 Click Connect GitHub organization
